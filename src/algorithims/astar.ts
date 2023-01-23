@@ -67,13 +67,17 @@ class AStarSolver {
         this.toSearch.push(this.startNode);
     }
 
+    /**
+     * Executes a single step of the path finding algorithm
+     * @returns - Whether the algorithm has quit or not
+     */
     stepGrid() {
         /** The node with the lowest fCost currently */
         let currentNode: Node = this.toSearch[0];
         if (this.toSearch.length === 0) {
             // No nodes left to search, impossible to solve
             console.log("Cannot find a path");
-            return;
+            return true;
         }
         // Get closest open node to end
         this.toSearch.forEach((newNode: Node) => {
@@ -89,15 +93,14 @@ class AStarSolver {
         let indexOfCurrentNode = this.toSearch.indexOf(currentNode);
         if (indexOfCurrentNode === -1) {
             console.error("Could not find currentNode in open list");
-            return;
+            return true;
         }
         this.toSearch.splice(indexOfCurrentNode, 1);
         this.addToSearched(currentNode);
         if (currentNode.pos.equals(this.endNode.pos)) {
             // Finished
             console.log("Found shortest path");
-            
-            return;
+            return true;
         }
 
         let cnx = currentNode.pos.x;
@@ -164,17 +167,7 @@ class AStarSolver {
                 }
             }
         }
-
-        /*
-        
-        foreach neighbor of currentNode:
-            if neighbor is barrier OR neighbor is already searched:
-                move on to next neighbor
-            if fCost of neighbor is shorter with current, or neighbor is not in toSearch list:
-                update the fCost of neighbor
-                set parent of neighbor to currentNode
-                add neighbor to toSearch
-        */
+       return false;
     }
 
     /** Renders the node values as an overlay */

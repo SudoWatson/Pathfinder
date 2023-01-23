@@ -1,4 +1,3 @@
-import { __Graphics__ } from "p5";
 import AStarSolver from "./algorithims/astar.js";
 
 
@@ -10,11 +9,6 @@ let cols: number, rows: number;
 // The starting and ending node for the algorithim
 let startPos: p5.Vector, endPos: p5.Vector;
 
-// Array of barrier positions
-let barriers = [];
-
-
-
 // Width and Height of the canvas
 let WIDTH: number, HEIGHT: number;
 
@@ -23,7 +17,16 @@ let grid: string[][];
 
 let aStar: AStarSolver;
 
-let i = 0;
+/** Boolean of whether the path finding algorithm is running or not */
+let running = false;
+
+/** The interval for stepping through the path finding algorithm */
+let pathInterval: number;
+/** Delay of ms between algorithm steps */
+let intervalDelay: number = 50;
+
+/** Show algorithm debug values or not */
+const DEBUG_VALUES = false;
 
 const sketch = (p: p5) => {
     p.setup = () => {
@@ -37,7 +40,7 @@ const sketch = (p: p5) => {
         WIDTH = Math.floor(cols * squareSize);
         HEIGHT = Math.floor(rows * squareSize);
 
-        p.frameRate(1);
+        //p.frameRate(1);
 
         // Create p canvas
         let canvas = p.createCanvas(WIDTH, HEIGHT);
@@ -52,6 +55,9 @@ const sketch = (p: p5) => {
 
         let resetButton = p.createButton("Reset");
         resetButton.mouseClicked(reset);
+
+        let toggleButton = p.createButton("Start/Stop");
+        toggleButton.mouseClicked(togglePathFinding);
 
 
         // TODO START TEMPORARY
@@ -76,8 +82,47 @@ reset();
                 p.square(i * squareSize, j * squareSize, squareSize);
             }
         }
-        aStar.stepGrid();
-        aStar.renderNodeValues(squareSize);
+
+        if (DEBUG_VALUES) aStar.renderNodeValues(squareSize);
+    }
+
+    function reset() {
+        // Set start and end points
+        startPos = p.createVector(6,6);
+        endPos = p.createVector(3,3);
+        setPos(startPos, 'S');
+        setPos(endPos, 'E');
+
+        // TODO this feels bad
+        for (const rowi in grid) {
+            if (Object.prototype.hasOwnProperty.call(grid, rowi)) {
+                const row = grid[rowi];
+                for (const squarei in row) {
+                    if (Object.prototype.hasOwnProperty.call(row, squarei)) {
+                        const square = row[squarei];
+                        if (square !== 'B' && square !== 'S' && square !== 'E') {
+                            grid[rowi][squarei] = ' ';
+                        }
+                    }
+                }
+            }
+        }
+
+
+        aStar = new AStarSolver(p, grid, startPos, endPos);
+    }
+
+    function togglePathFinding() {
+        if (running) {
+            clearInterval(pathInterval);
+        } else {
+            aStar.stepGrid();
+            pathInterval = setInterval(() => {
+                let finished = aStar.stepGrid();
+                if (finished) togglePathFinding();
+            }, intervalDelay);
+        }
+        running = !running;
     }
 
     // Places a barrier
@@ -132,32 +177,6 @@ reset();
             grid[i] = innerArray;
         }
         return grid;
-    }
-
-    function reset() {
-        // Set start and end points
-        startPos = p.createVector(6,6);
-        endPos = p.createVector(3,3);
-        setPos(startPos, 'S');
-        setPos(endPos, 'E');
-
-        // TODO this feels bad
-        for (const rowi in grid) {
-            if (Object.prototype.hasOwnProperty.call(grid, rowi)) {
-                const row = grid[rowi];
-                for (const squarei in row) {
-                    if (Object.prototype.hasOwnProperty.call(row, squarei)) {
-                        const square = row[squarei];
-                        if (square !== 'B' && square !== 'S' && square !== 'E') {
-                            grid[rowi][squarei] = ' ';
-                        }
-                    }
-                }
-            }
-        }
-
-
-        aStar = new AStarSolver(p, grid, startPos, endPos);
     }
 }
 
