@@ -1,0 +1,5 @@
+{
+    "name": "A* Search",
+    "description": "A* Search",
+    "fileLocation": "./astar.js"
+}

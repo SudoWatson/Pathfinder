@@ -1,9 +1,10 @@
+import AlgoBase from "./algorithims/algoBase.js";
 import AStarSolver from "./algorithims/astar/astar.js";
 
 import {FillType, AlgStatus} from "./tools.js";
 
 
-let squareSize = 20;
+let squareSize = 50;
 
 // Amount of columns/rows on the grid
 let cols: number, rows: number;
@@ -21,7 +22,7 @@ let WIDTH: number, HEIGHT: number;
 /** Array grid containing all of the squares information. grid[x][y] */ 
 let grid: string[][];
 
-let aStar: AStarSolver;
+let aStar: AlgoBase;
 
 /** Boolean of whether the path finding algorithm is running or not */
 let running = false;
@@ -38,8 +39,15 @@ let pathInterval: number;
 /** Delay of ms between path display steps */
 let pathIntervalDelay: number = 10;
 
+const VIEW_PATH_IN_PROGRESS = false;
+
 /** Show algorithm debug values or not */
 const DEBUG_VALUES = false;
+
+/** If user is currently moving start node */
+let movingStart = false;
+/** If user is currently moving end node */
+let movingEnd = false;
 
 
 const sketch = (p: p5) => {
@@ -78,6 +86,9 @@ const sketch = (p: p5) => {
 
 
         // TODO START TEMPORARY
+        // Set start and end positions
+        startPos = p.createVector(0,0);
+        endPos = p.createVector(cols-1,rows-1);
         reset();
         // TODO End Temporary
     }
@@ -97,7 +108,8 @@ const sketch = (p: p5) => {
                 else if (type === FillType.START) p.fill(230,0,0);
                 else if (type === FillType.END) p.fill(0,160,0);
                 // If position is in the list of current best path, set fill to orange
-                if (displayPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
+                if (running && VIEW_PATH_IN_PROGRESS && currentPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
+                if (!running && displayPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
                 // If position is the start or end position, set fill to red or green
                 if (startPos.equals(p.createVector(i,j))) p.fill(230,0,0);
                 if (endPos.equals(p.createVector(i,j))) p.fill(0,160,0);
@@ -111,12 +123,8 @@ const sketch = (p: p5) => {
 
     function reset() {
         // Set start and end points
-        startPos = p.createVector(6,6);
-        endPos = p.createVector(3,3);
         currentPath = [];
         displayPath = [];
-        setPos(startPos, 'S');
-        setPos(endPos, 'E');
 
         // TODO this feels bad
         for (const rowi in grid) {
@@ -152,11 +160,66 @@ const sketch = (p: p5) => {
     }
 
     // Places a barrier
-    p.mousePressed = () => {place()}  // TODO Drag start and end points
-    p.mouseDragged = () => {place()}
+    p.mousePressed = () => {  // TODO Drag start and end points
+        // If pressed on start or end point, move start or end point
+        let mousePosition = p.createVector(Math.floor(p.mouseX/squareSize),Math.floor(p.mouseY/squareSize));
+        if (p.mouseButton === p.LEFT) {
+            if (startPos.equals(mousePosition)) {
+                movingStart = true;
+                return;
+            } else if (endPos.equals(mousePosition)) {
+                movingEnd = true;
+                return;
+            }
+        }
+
+        place(mousePosition)
+    }
+    p.mouseDragged = () => {
+        let mousePosition = p.createVector(Math.floor(p.mouseX/squareSize),Math.floor(p.mouseY/squareSize));
+        if (p.mouseButton === p.LEFT) {
+            if (movingStart) {
+                setPos(startPos, ' ');
+                startPos = mousePosition;
+                setPos(startPos, 'S');
+                aStar = new AStarSolver(p, grid, startPos, endPos);
+                return;
+            } else if (movingEnd) {
+                setPos(endPos, ' ');
+                endPos = mousePosition;
+                setPos(endPos, 'E');
+                aStar = new AStarSolver(p, grid, startPos, endPos);
+                return;
+            }
+        }
+
+        place(mousePosition)
+    }
+    p.mouseReleased = () => {
+        movingStart = false;
+        movingEnd = false;
+    }
 
     p.keyPressed = () => {
         // aStar.stepGrid();
+    }
+
+    /**
+     * Places a barrier at the mouse position if left click
+     * Removes a barrier at the mouse position if right click
+     */
+    function place(position: p5.Vector): void {
+        // Position to set
+        
+        // TODO Another invalid position when going left of grid, non-fetal
+        // Invalid positions
+        if (position.x >= cols) return;
+        if (position.y >= rows) return;
+        if (position.equals(startPos) || position.equals(endPos)) return;
+
+        // Set with left, clear with right click
+        if (p.mouseButton == "left") grid[position.x][position.y] = 'B';
+        else if (p.mouseButton == "right") grid[position.x][position.y] = ' ';
     }
 
 
@@ -176,25 +239,6 @@ const sketch = (p: p5) => {
         } else if (stepResult[1] === AlgStatus.NO_SOLUTION) {
             alert("No solution!");
         }
-    }
-
-    /**
-     * Places a barrier at the mouse position if left click
-     * Removes a barrier at the mouse position if right click
-     */
-    function place(): void {
-        // Position to set
-        let position = p.createVector(Math.floor(p.mouseX/squareSize),Math.floor(p.mouseY/squareSize));
-        
-        // TODO Another invalid position when going left of grid, non-fetal
-        // Invalid positions
-        if (position.x >= cols) return;
-        if (position.y >= rows) return;
-        if (position.equals(startPos) || position.equals(endPos)) return;
-
-        // Set with left, clear with right click
-        if (p.mouseButton == "left") grid[position.x][position.y] = 'B';
-        else if (p.mouseButton == "right") grid[position.x][position.y] = ' ';
     }
 
     /**

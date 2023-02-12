@@ -1,7 +1,10 @@
-import { AlgStatus } from "../../tools";
+import { AlgStatus } from "../../tools.js";
+import AlgoBase from "../algoBase.js";
+import NodeBase from "../nodeBase.js";
 
+// TODO Diagonal movement is hard coded to be disabled
 /** Cost for a node to go straight to another node */
-const STRAIGHT_COST = 10;
+const STRAIGHT_COST = 1;
 /** Cost for a node to go diagonal to another node */
 const DIAGONAL_COST = 14;
 
@@ -16,25 +19,18 @@ const ENABLE_DIAGONAL = false;
 //     hCost: number
 // }
 
-// TODO Each algorithm gets its own folder, with a meta file
-// TODO Export this to own file
-class Node {
-    /** Node position on grid */
-    public pos: p5.Vector;
+class Node extends NodeBase {
     /** Distance from starting node */
     public gCost: number;
-    /** Hypothetical distance from end node */
+    /** Distance from end node */
     public hCost: number;
     /** GCost + HCost; Total expected distance along path this node is part of */
     //public fCost: number;
-    /** Parent node along current shortest path */
-    public parentNode: Node | null;
 
     constructor(pos: p5.Vector, gCost: number) {
-        this.pos = pos;
+        super(pos);
         this.gCost = gCost;
         this.hCost = 0;
-        this.parentNode = null;
     }
 
     /** GCost + HCost: Total expected distance along path this node is part of */
@@ -48,26 +44,16 @@ class Node {
     }
 }
 
-class AStarSolver {
 
-    /** p5 instance */
-    private p: p5;
-    /** Nodes already searched and found best path to; Closed list */
-    private searched: Node[];
-    /** Nodes to search and find best path to; Open list */
-    private toSearch: Node[];
-    private grid: String[][];
-    private startNode: Node;
-    private endNode: Node;
+
+class AStarSolver extends AlgoBase {
+
 
     constructor(p: p5, grid: string[][], startPos: p5.Vector, endPos: p5.Vector) {
-        this.searched = [];
-        this.toSearch = [];
-        this.grid = grid;
-        this.p = p;
+        super(p, grid, startPos, endPos);
         this.endNode = new Node(endPos, 0);
         this.startNode = new Node(startPos, 0);
-        this.startNode.updateHCost(this.endNode);
+        (this.startNode as Node).updateHCost(this.endNode as Node);
         this.toSearch.push(this.startNode);
     }
 
@@ -77,20 +63,20 @@ class AStarSolver {
      */
     stepGrid(): [p5.Vector[], AlgStatus] {
         /** The node with the lowest fCost currently */
-        let currentNode: Node = this.toSearch[0];
+        let currentNode: Node = this.toSearch[0] as Node;
         if (this.toSearch.length === 0) {
             // No nodes left to search, impossible to solve
             console.log("Cannot find a path");
             return [this.buildPath(currentNode), AlgStatus.NO_SOLUTION];
         }
         // Get closest open node to end
-        this.toSearch.forEach((newNode: Node) => {
+        this.toSearch.forEach((newNode: NodeBase|Node) => {
             // If currentNode already has lower fCost, don't bother
-            if (currentNode.fCost < newNode.fCost) return;  // Exit forEach
+            if (currentNode.fCost < (newNode as Node).fCost) return;  // Exit forEach
             // If fCosts are equal, go by hCost
-            if (currentNode.hCost < newNode.hCost) return;
+            if (currentNode.hCost < (newNode as Node).hCost) return;
             // Otherwise, this new node is better
-            currentNode = newNode;
+            currentNode = newNode as Node;
         })
 
         // Remove currentNode from toSearch list
@@ -145,7 +131,7 @@ class AStarSolver {
                 for (const nodeToSearch of this.toSearch) {
                     if (nodeToSearch.pos.equals(neighborPos)) {
                         inOpen = true;
-                        neighborNode = nodeToSearch;
+                        neighborNode = nodeToSearch as Node;
                         break;
                     }
                 }
@@ -166,7 +152,7 @@ class AStarSolver {
                 if (!inOpen || isCloserWithThisNode) {
                     if (!inOpen) {  // Node doesn't yet exist, create it
                         neighborNode = new Node(neighborPos, potentialNewGCost);
-                        neighborNode.updateHCost(this.endNode);
+                        neighborNode.updateHCost(this.endNode as Node);
                         this.addToToSearched(neighborNode);
                     }
                     neighborNode!.parentNode = currentNode;
@@ -183,13 +169,18 @@ class AStarSolver {
         let currentNode: Node | null = node;
         while (currentNode !== null && currentNode !== undefined) {
             path.push(currentNode.pos);
-            currentNode = currentNode.parentNode;
+            currentNode = currentNode.parentNode as Node;
         }
         return path;
     }
 
 
-    /** Renders the node values as an overlay */
+    /** Renders the node values as an overlay
+     * @param squareSize - The size of the squares in the grid
+     * 
+     * Displays the fCost - center, gCost - top left, and hCost - top right of each node
+     * 
+    */
     renderNodeValues(squareSize: number) {
         for (const node of [...this.toSearch, ...this.searched]) {
             let p = this.p;
@@ -198,9 +189,9 @@ class AStarSolver {
 
             p.fill(255);
             p.textAlign(p.CENTER);
-            p.text(node.fCost, 0, 0);
-            p.text(node.gCost, -10, -10);
-            p.text(node.hCost, 10, -10);
+            p.text((node as Node).fCost, 0, 0);
+            p.text((node as Node).gCost, -10, -10);
+            p.text((node as Node).hCost, 10, -10);
 
             p.pop();
         }
@@ -228,6 +219,7 @@ class AStarSolver {
 }
 
 /** Returns the heuristic distance from Vector to Vector */
+/* This is for diagonal movement *
 function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
     let distance = 0;
     // Get the axis locked distances
@@ -241,6 +233,16 @@ function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
     // The difference of the axis distance is the amount of DIAGONAL steps to go
     distance += Math.abs(dx - dy) * STRAIGHT_COST;
 
+    return distance;
+}
+*/
+/* This is for straight movement */
+function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
+    let distance = 0;
+    // Get the axis locked distances
+    let dx = Math.abs((pos1.x-pos2.x));
+    let dy = Math.abs((pos1.y-pos2.y));
+    distance = dx * STRAIGHT_COST + dy * STRAIGHT_COST;
     return distance;
 }
 
