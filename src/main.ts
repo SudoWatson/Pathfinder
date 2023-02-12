@@ -1,13 +1,16 @@
 import AStarSolver from "./algorithims/astar.js";
 
 
-let squareSize = 50;
+let squareSize = 20;
 
 // Amount of columns/rows on the grid
 let cols: number, rows: number;
 
 // The starting and ending node for the algorithim
 let startPos: p5.Vector, endPos: p5.Vector;
+
+/** The current best path of positions towards solution */
+let currentPath: p5.Vector[];
 
 // Width and Height of the canvas
 let WIDTH: number, HEIGHT: number;
@@ -20,13 +23,23 @@ let aStar: AStarSolver;
 /** Boolean of whether the path finding algorithm is running or not */
 let running = false;
 
-/** The interval for stepping through the path finding algorithm */
+/** The interval looper thing for stepping through the path finding algorithm, called from 'setInterval' */
 let pathInterval: number;
+
 /** Delay of ms between algorithm steps */
 let intervalDelay: number = 50;
 
 /** Show algorithm debug values or not */
 const DEBUG_VALUES = false;
+
+const enum FillType {
+    EMPTY = ' ',
+    BLOCK = 'B',
+    START = 'S',
+    END = 'E',
+    CLOSED = 'C',
+    OPEN = 'O'
+};
 
 const sketch = (p: p5) => {
     p.setup = () => {
@@ -34,13 +47,14 @@ const sketch = (p: p5) => {
        
         // Calculate how many squares can fit on screen
         cols = Math.floor((p.windowWidth*0.99)/squareSize);
-        rows = Math.floor((p.windowHeight/2)/squareSize);
+        rows = Math.floor((p.windowHeight*3/4)/squareSize);
 
         // Canvas Dimensions
         WIDTH = Math.floor(cols * squareSize);
         HEIGHT = Math.floor(rows * squareSize);
 
         //p.frameRate(1);
+        currentPath = [];
 
         // Create p canvas
         let canvas = p.createCanvas(WIDTH, HEIGHT);
@@ -61,7 +75,7 @@ const sketch = (p: p5) => {
 
 
         // TODO START TEMPORARY
-reset();
+        reset();
         // TODO End Temporary
     }
 
@@ -73,12 +87,18 @@ reset();
             for (let j = 0; j < rows; j++) {
                 let type = grid[i][j];
                 // Set color depending on fill type
-                if (type === ' ') p.fill(255);
-                else if (type === 'B') p.fill(0);
-                else if (type === 'S') p.fill(230,0,0);
-                else if (type === 'E') p.fill(0,160,0);
-                else if (type === 'C') p.fill(0,160,160);
-                else if (type === 'O') p.fill(0,0,255);
+                if (type === FillType.EMPTY) p.fill(255);
+                else if (type === FillType.BLOCK) p.fill(0);
+                else if (type === FillType.CLOSED) p.fill(0,160,160);
+                else if (type === FillType.OPEN) p.fill(0,0,255);
+                else if (type === FillType.START) p.fill(230,0,0);
+                else if (type === FillType.END) p.fill(0,160,0);
+                // If position is in the list of current best path, set fill to orange
+                if (currentPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
+                // If position is the start or end position, set fill to red or green
+                if (startPos.equals(p.createVector(i,j))) p.fill(230,0,0);
+                if (endPos.equals(p.createVector(i,j))) p.fill(0,160,0);
+
                 p.square(i * squareSize, j * squareSize, squareSize);
             }
         }
@@ -90,6 +110,7 @@ reset();
         // Set start and end points
         startPos = p.createVector(6,6);
         endPos = p.createVector(3,3);
+        currentPath = [];
         setPos(startPos, 'S');
         setPos(endPos, 'E');
 
@@ -113,13 +134,13 @@ reset();
     }
 
     function togglePathFinding() {
+        // Already running, stop running
         if (running) {
             clearInterval(pathInterval);
-        } else {
-            aStar.stepGrid();
+        } else {  // Not running, start running
+            stepPathFinder();
             pathInterval = setInterval(() => {
-                let finished = aStar.stepGrid();
-                if (finished) togglePathFinding();
+                stepPathFinder();
             }, intervalDelay);
         }
         running = !running;
@@ -131,6 +152,14 @@ reset();
 
     p.keyPressed = () => {
         // aStar.stepGrid();
+    }
+
+    function stepPathFinder() {
+        let stepResult = aStar.stepGrid();
+        currentPath = stepResult[0];
+        if (stepResult[1]) {
+            togglePathFinding();
+        }
     }
 
     /**

@@ -69,15 +69,15 @@ class AStarSolver {
 
     /**
      * Executes a single step of the path finding algorithm
-     * @returns - Whether the algorithm has quit or not
+     * @returns - The current best path, and whether the algorithm has finished
      */
-    stepGrid() {
+    stepGrid(): [p5.Vector[], boolean] {
         /** The node with the lowest fCost currently */
         let currentNode: Node = this.toSearch[0];
         if (this.toSearch.length === 0) {
             // No nodes left to search, impossible to solve
             console.log("Cannot find a path");
-            return true;
+            return [this.buildPath(currentNode), true];
         }
         // Get closest open node to end
         this.toSearch.forEach((newNode: Node) => {
@@ -93,14 +93,14 @@ class AStarSolver {
         let indexOfCurrentNode = this.toSearch.indexOf(currentNode);
         if (indexOfCurrentNode === -1) {
             console.error("Could not find currentNode in open list");
-            return true;
+            return [this.buildPath(currentNode), true];
         }
         this.toSearch.splice(indexOfCurrentNode, 1);
         this.addToSearched(currentNode);
         if (currentNode.pos.equals(this.endNode.pos)) {
             // Finished
             console.log("Found shortest path");
-            return true;
+            return [this.buildPath(currentNode), true];
         }
 
         let cnx = currentNode.pos.x;
@@ -167,8 +167,20 @@ class AStarSolver {
                 }
             }
         }
-       return false;
+       return [this.buildPath(currentNode), false];
     }
+
+    /** Creates a list of positions of the path of the passed node */
+    buildPath(node: Node): p5.Vector[] {
+        let path: p5.Vector[] = [];
+        let currentNode: Node | null = node;
+        while (currentNode !== null) {
+            path.push(currentNode.pos);
+            currentNode = currentNode.parentNode;
+        }
+        return path;
+    }
+
 
     /** Renders the node values as an overlay */
     renderNodeValues(squareSize: number) {
