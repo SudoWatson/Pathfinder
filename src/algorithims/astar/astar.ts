@@ -1,7 +1,11 @@
+import { AlgStatus } from "../../tools";
+
 /** Cost for a node to go straight to another node */
 const STRAIGHT_COST = 10;
 /** Cost for a node to go diagonal to another node */
 const DIAGONAL_COST = 14;
+
+const ENABLE_DIAGONAL = false;
 
 // type Node = {
 //     /** Node position on grid */
@@ -71,13 +75,13 @@ class AStarSolver {
      * Executes a single step of the path finding algorithm
      * @returns - The current best path, and whether the algorithm has finished
      */
-    stepGrid(): [p5.Vector[], boolean] {
+    stepGrid(): [p5.Vector[], AlgStatus] {
         /** The node with the lowest fCost currently */
         let currentNode: Node = this.toSearch[0];
         if (this.toSearch.length === 0) {
             // No nodes left to search, impossible to solve
             console.log("Cannot find a path");
-            return [this.buildPath(currentNode), true];
+            return [this.buildPath(currentNode), AlgStatus.NO_SOLUTION];
         }
         // Get closest open node to end
         this.toSearch.forEach((newNode: Node) => {
@@ -93,25 +97,28 @@ class AStarSolver {
         let indexOfCurrentNode = this.toSearch.indexOf(currentNode);
         if (indexOfCurrentNode === -1) {
             console.error("Could not find currentNode in open list");
-            return [this.buildPath(currentNode), true];
+            return [this.buildPath(currentNode), AlgStatus.ERROR];
         }
         this.toSearch.splice(indexOfCurrentNode, 1);
         this.addToSearched(currentNode);
         if (currentNode.pos.equals(this.endNode.pos)) {
             // Finished
             console.log("Found shortest path");
-            return [this.buildPath(currentNode), true];
+            return [this.buildPath(currentNode), AlgStatus.FOUND_SOLUTION];
         }
 
         let cnx = currentNode.pos.x;
         let cny = currentNode.pos.y;
         for (let neighborX = cnx-1; neighborX <= cnx+1; neighborX++) {
-
             // Out of bounds, don't check
             if (neighborX <= -1) continue;
             if (neighborX >= this.grid.length) continue;
 
             for (let neighborY = cny-1; neighborY <= cny+1; neighborY++) {
+                // Don't check diagonals if not enabled
+                if (!ENABLE_DIAGONAL) {
+                    if (neighborX !== cnx && neighborY !== cny) continue;
+                }
 
                 // Out of bounds, don't check
                 if (neighborY <= -1) continue;
@@ -167,14 +174,14 @@ class AStarSolver {
                 }
             }
         }
-       return [this.buildPath(currentNode), false];
+       return [this.buildPath(currentNode), AlgStatus.RUNNING];
     }
 
     /** Creates a list of positions of the path of the passed node */
     buildPath(node: Node): p5.Vector[] {
         let path: p5.Vector[] = [];
         let currentNode: Node | null = node;
-        while (currentNode !== null) {
+        while (currentNode !== null && currentNode !== undefined) {
             path.push(currentNode.pos);
             currentNode = currentNode.parentNode;
         }
@@ -220,8 +227,6 @@ class AStarSolver {
     }
 }
 
-export default AStarSolver;
-
 /** Returns the heuristic distance from Vector to Vector */
 function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
     let distance = 0;
@@ -239,3 +244,4 @@ function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
     return distance;
 }
 
+export default AStarSolver;

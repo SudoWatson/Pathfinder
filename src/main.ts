@@ -1,4 +1,6 @@
-import AStarSolver from "./algorithims/astar.js";
+import AStarSolver from "./algorithims/astar/astar.js";
+
+import {FillType, AlgStatus} from "./tools.js";
 
 
 let squareSize = 20;
@@ -11,6 +13,7 @@ let startPos: p5.Vector, endPos: p5.Vector;
 
 /** The current best path of positions towards solution */
 let currentPath: p5.Vector[];
+let displayPath: p5.Vector[];
 
 // Width and Height of the canvas
 let WIDTH: number, HEIGHT: number;
@@ -24,22 +27,20 @@ let aStar: AStarSolver;
 let running = false;
 
 /** The interval looper thing for stepping through the path finding algorithm, called from 'setInterval' */
-let pathInterval: number;
+let algInterval: number;
 
 /** Delay of ms between algorithm steps */
-let intervalDelay: number = 50;
+let algIntervalDelay: number = 50;
+
+/** The interval looper thing for stepping through the found path */
+let pathInterval: number;
+
+/** Delay of ms between path display steps */
+let pathIntervalDelay: number = 10;
 
 /** Show algorithm debug values or not */
 const DEBUG_VALUES = false;
 
-const enum FillType {
-    EMPTY = ' ',
-    BLOCK = 'B',
-    START = 'S',
-    END = 'E',
-    CLOSED = 'C',
-    OPEN = 'O'
-};
 
 const sketch = (p: p5) => {
     p.setup = () => {
@@ -63,15 +64,17 @@ const sketch = (p: p5) => {
         canvas.elt.addEventListener("contextmenu", (e: any) => e.preventDefault())
 
 
-        
-        grid = createEmptyGrid(rows, cols);
-        // ---------------- END P5 SETUP ---------------- \\
-
         let resetButton = p.createButton("Reset");
         resetButton.mouseClicked(reset);
 
         let toggleButton = p.createButton("Start/Stop");
         toggleButton.mouseClicked(togglePathFinding);
+
+        // ---------------- END P5 SETUP ---------------- \\
+
+
+        
+        grid = createEmptyGrid(rows, cols);
 
 
         // TODO START TEMPORARY
@@ -94,7 +97,7 @@ const sketch = (p: p5) => {
                 else if (type === FillType.START) p.fill(230,0,0);
                 else if (type === FillType.END) p.fill(0,160,0);
                 // If position is in the list of current best path, set fill to orange
-                if (currentPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
+                if (displayPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
                 // If position is the start or end position, set fill to red or green
                 if (startPos.equals(p.createVector(i,j))) p.fill(230,0,0);
                 if (endPos.equals(p.createVector(i,j))) p.fill(0,160,0);
@@ -111,6 +114,7 @@ const sketch = (p: p5) => {
         startPos = p.createVector(6,6);
         endPos = p.createVector(3,3);
         currentPath = [];
+        displayPath = [];
         setPos(startPos, 'S');
         setPos(endPos, 'E');
 
@@ -133,32 +137,44 @@ const sketch = (p: p5) => {
         aStar = new AStarSolver(p, grid, startPos, endPos);
     }
 
+    /** Toggles running of algorithm */
     function togglePathFinding() {
         // Already running, stop running
         if (running) {
-            clearInterval(pathInterval);
+            clearInterval(algInterval);
         } else {  // Not running, start running
             stepPathFinder();
-            pathInterval = setInterval(() => {
+            algInterval = setInterval(() => {
                 stepPathFinder();
-            }, intervalDelay);
+            }, algIntervalDelay);
         }
         running = !running;
     }
 
     // Places a barrier
-    p.mousePressed = () => {place()}
+    p.mousePressed = () => {place()}  // TODO Drag start and end points
     p.mouseDragged = () => {place()}
 
     p.keyPressed = () => {
         // aStar.stepGrid();
     }
 
+
+
+    /**
+     * Steps through the path finding algorithm once
+     * If the algorithm is finished, stops the algorithm
+     */
     function stepPathFinder() {
         let stepResult = aStar.stepGrid();
         currentPath = stepResult[0];
-        if (stepResult[1]) {
-            togglePathFinding();
+        if (stepResult[1] !== AlgStatus.RUNNING) {
+            togglePathFinding();  // Stop running
+        }
+        if (stepResult[1] === AlgStatus.FOUND_SOLUTION) {
+            walkPath();
+        } else if (stepResult[1] === AlgStatus.NO_SOLUTION) {
+            alert("No solution!");
         }
     }
 
@@ -206,6 +222,34 @@ const sketch = (p: p5) => {
             grid[i] = innerArray;
         }
         return grid;
+    }
+
+    /**
+     * Steps through the path display, displaying one more at a time
+     */
+    function walkPath() {
+        pathInterval = setInterval(() => {
+            let pathResult = stepPathDisplay();
+            if (!pathResult) {
+                clearInterval(pathInterval);
+            }
+        }, pathIntervalDelay);
+    }
+
+    /**
+     * Adds a position to the display path
+     * Allows the path to move towards the end position
+     * @returns {boolean} true if there is more to display
+     */
+    function stepPathDisplay(): boolean {
+        if (displayPath.length === currentPath.length) {
+            return false;
+        }
+        displayPath.push(currentPath[currentPath.length - displayPath.length - 1]);
+        if (displayPath.length === currentPath.length) {
+            return false;
+        }
+        return true;
     }
 }
 
