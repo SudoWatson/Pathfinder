@@ -1,4 +1,4 @@
-import { AlgStatus } from "../tools.js";
+import { AlgStatus, FillType } from "../tools.js";
 import NodeBase from "./nodeBase.js";
 
 abstract class AlgoBase {
@@ -45,7 +45,7 @@ abstract class AlgoBase {
      * @param squareSize - The size of the squares in the grid
      * Displays the fCost - center, gCost - top left, and hCost - top right of each node
     */
-    abstract renderNodeValues(squareSize: number): void;
+    renderNodeValues(squareSize: number): void {};
 
     get squaresSearched() {
         return [...this.searched];
@@ -57,13 +57,13 @@ abstract class AlgoBase {
 
     /** Add the node to the 'toSearched' list */
     addToToSearched(node: NodeBase) {
-        this.grid[node.pos.x][node.pos.y] = 'O';
+        this.grid[node.pos.x][node.pos.y] = FillType.OPEN;
         this.toSearch.push(node);
     }
 
     /** Add the node to the 'searched' list */
     addToSearched(node: NodeBase) {
-        this.grid[node.pos.x][node.pos.y] = 'C';
+        this.grid[node.pos.x][node.pos.y] = FillType.CLOSED;
         this.searched.push(node);
     }
 }

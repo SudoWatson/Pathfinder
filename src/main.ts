@@ -1,5 +1,6 @@
 import AlgoBase from "./algorithims/algoBase.js";
 import AStarSolver from "./algorithims/astar/astar.js";
+import BreadthFirst from "./algorithims/breadthFirst/algo.js";
 
 import {FillType, AlgStatus} from "./tools.js";
 
@@ -20,9 +21,9 @@ let displayPath: p5.Vector[];
 let WIDTH: number, HEIGHT: number;
 
 /** Array grid containing all of the squares information. grid[x][y] */ 
-let grid: string[][];
+let grid: FillType[][];
 
-let aStar: AlgoBase;
+let pathFinder: AlgoBase;
 
 /** Boolean of whether the path finding algorithm is running or not */
 let running = false;
@@ -118,7 +119,7 @@ const sketch = (p: p5) => {
             }
         }
 
-        if (DEBUG_VALUES) aStar.renderNodeValues(squareSize);
+        if (DEBUG_VALUES) pathFinder.renderNodeValues(squareSize);
     }
 
     function reset() {
@@ -134,7 +135,7 @@ const sketch = (p: p5) => {
                     if (Object.prototype.hasOwnProperty.call(row, squarei)) {
                         const square = row[squarei];
                         if (square !== 'B' && square !== 'S' && square !== 'E') {
-                            grid[rowi][squarei] = ' ';
+                            grid[rowi][squarei] = FillType.EMPTY;
                         }
                     }
                 }
@@ -142,7 +143,7 @@ const sketch = (p: p5) => {
         }
 
 
-        aStar = new AStarSolver(p, grid, startPos, endPos);
+        pathFinder = new BreadthFirst(p, grid, startPos, endPos);
     }
 
     /** Toggles running of algorithm */
@@ -179,16 +180,16 @@ const sketch = (p: p5) => {
         let mousePosition = p.createVector(Math.floor(p.mouseX/squareSize),Math.floor(p.mouseY/squareSize));
         if (p.mouseButton === p.LEFT) {
             if (movingStart) {
-                setPos(startPos, ' ');
+                setPos(startPos, FillType.EMPTY);
                 startPos = mousePosition;
-                setPos(startPos, 'S');
-                aStar = new AStarSolver(p, grid, startPos, endPos);
+                setPos(startPos, FillType.START);
+                pathFinder = new BreadthFirst(p, grid, startPos, endPos);
                 return;
             } else if (movingEnd) {
-                setPos(endPos, ' ');
+                setPos(endPos, FillType.EMPTY);
                 endPos = mousePosition;
-                setPos(endPos, 'E');
-                aStar = new AStarSolver(p, grid, startPos, endPos);
+                setPos(endPos, FillType.END);
+                pathFinder = new BreadthFirst(p, grid, startPos, endPos);
                 return;
             }
         }
@@ -218,8 +219,8 @@ const sketch = (p: p5) => {
         if (position.equals(startPos) || position.equals(endPos)) return;
 
         // Set with left, clear with right click
-        if (p.mouseButton == "left") grid[position.x][position.y] = 'B';
-        else if (p.mouseButton == "right") grid[position.x][position.y] = ' ';
+        if (p.mouseButton == "left") setPos(position, FillType.BLOCK);
+        else if (p.mouseButton == "right") setPos(position, FillType.EMPTY);
     }
 
 
@@ -229,7 +230,7 @@ const sketch = (p: p5) => {
      * If the algorithm is finished, stops the algorithm
      */
     function stepPathFinder() {
-        let stepResult = aStar.stepGrid();
+        let stepResult = pathFinder.stepGrid();
         currentPath = stepResult[0];
         if (stepResult[1] !== AlgStatus.RUNNING) {
             togglePathFinding();  // Stop running
@@ -246,7 +247,7 @@ const sketch = (p: p5) => {
      * @param {Vector} pos - Position to set
      * @param {String} setTo - Char string to set the position to
      */
-    function setPos(pos: p5.Vector, setTo: string): void {
+    function setPos(pos: p5.Vector, setTo: FillType): void {
         grid[pos.x][pos.y] = setTo;
     }
 
@@ -256,12 +257,12 @@ const sketch = (p: p5) => {
      * @param {number} cols 
      * @returns {string[][]} Empty grid
      */
-    function createEmptyGrid(rows: number, cols: number): string[][] {
+    function createEmptyGrid(rows: number, cols: number): FillType[][] {
         let grid = [];
         for (let i = 0; i < cols; i++) {
             let innerArray = [];
             for (let j = 0; j < rows; j++) {
-                innerArray[j] = ' ';
+                innerArray[j] = FillType.EMPTY;
             }
             grid[i] = innerArray;
         }

@@ -40,7 +40,36 @@ class Node extends NodeBase {
 
     /** Update the hCost according the the given end node */
     updateHCost(endNode: Node) {
-        this.hCost = distanceBetween(this.pos, endNode.pos);
+        this.hCost = this.distanceBetween(this.pos, endNode.pos);
+    }
+    
+
+    /** Returns the heuristic distance from Vector to Vector */
+    /* This is for diagonal movement *
+    function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
+        let distance = 0;
+        // Get the axis locked distances
+        let dx = Math.abs((pos1.x-pos2.x));
+        let dy = Math.abs((pos1.y-pos2.y));
+        
+        // The smallest axis distance is the amount of STRAIGHT steps to go
+        if (dx < dy) distance += dx * DIAGONAL_COST;
+        else distance += dy * DIAGONAL_COST;
+
+        // The difference of the axis distance is the amount of DIAGONAL steps to go
+        distance += Math.abs(dx - dy) * STRAIGHT_COST;
+
+        return distance;
+    }
+    */
+    /* This is for straight movement */
+    private distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
+        let distance = 0;
+        // Get the axis locked distances
+        let dx = Math.abs((pos1.x-pos2.x));
+        let dy = Math.abs((pos1.y-pos2.y));
+        distance = dx * STRAIGHT_COST + dy * STRAIGHT_COST;
+        return distance;
     }
 }
 
@@ -163,16 +192,6 @@ class AStarSolver extends AlgoBase {
        return [this.buildPath(currentNode), AlgStatus.RUNNING];
     }
 
-    /** Creates a list of positions of the path of the passed node */
-    buildPath(node: Node): p5.Vector[] {
-        let path: p5.Vector[] = [];
-        let currentNode: Node | null = node;
-        while (currentNode !== null && currentNode !== undefined) {
-            path.push(currentNode.pos);
-            currentNode = currentNode.parentNode as Node;
-        }
-        return path;
-    }
 
 
     /** Renders the node values as an overlay
@@ -197,53 +216,6 @@ class AStarSolver extends AlgoBase {
         }
     }
 
-    get squaresSearched() {
-        return [...this.searched];
-    }
-
-    get squaresToSearch() {
-        return [...this.toSearch];
-    }
-
-    /** Add the node to the 'toSearched' list */
-    addToToSearched(node: Node) {
-        this.grid[node.pos.x][node.pos.y] = 'O';
-        this.toSearch.push(node);
-    }
-
-    /** Add the node to the 'searched' list */
-    addToSearched(node: Node) {
-        this.grid[node.pos.x][node.pos.y] = 'C';
-        this.searched.push(node);
-    }
-}
-
-/** Returns the heuristic distance from Vector to Vector */
-/* This is for diagonal movement *
-function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
-    let distance = 0;
-    // Get the axis locked distances
-    let dx = Math.abs((pos1.x-pos2.x));
-    let dy = Math.abs((pos1.y-pos2.y));
-    
-    // The smallest axis distance is the amount of STRAIGHT steps to go
-    if (dx < dy) distance += dx * DIAGONAL_COST;
-    else distance += dy * DIAGONAL_COST;
-
-    // The difference of the axis distance is the amount of DIAGONAL steps to go
-    distance += Math.abs(dx - dy) * STRAIGHT_COST;
-
-    return distance;
-}
-*/
-/* This is for straight movement */
-function distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
-    let distance = 0;
-    // Get the axis locked distances
-    let dx = Math.abs((pos1.x-pos2.x));
-    let dy = Math.abs((pos1.y-pos2.y));
-    distance = dx * STRAIGHT_COST + dy * STRAIGHT_COST;
-    return distance;
 }
 
 export default AStarSolver;

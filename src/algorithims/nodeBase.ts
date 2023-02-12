@@ -4,9 +4,9 @@ class NodeBase {
     /** Parent node along current shortest path */
     public parentNode: NodeBase | null;
 
-    constructor(pos: p5.Vector) {
+    constructor(pos: p5.Vector, parentNode?: NodeBase) {
         this.pos = pos;
-        this.parentNode = null;
+        this.parentNode = parentNode || null;
     }
 }
 
