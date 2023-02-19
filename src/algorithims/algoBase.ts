@@ -13,6 +13,11 @@ abstract class AlgoBase {
     protected startNode: NodeBase;
     protected endNode: NodeBase;
 
+    /** Name of the algorithm */
+    public static algoName: string = "Unnamed";
+    /** Description of the algorithm */
+    public static description: string = "No description available";
+
     constructor(p: p5, grid: string[][], startPos: p5.Vector, endPos: p5.Vector) {
         this.searched = [];
         this.toSearch = [];
@@ -66,6 +71,8 @@ abstract class AlgoBase {
         this.grid[node.pos.x][node.pos.y] = FillType.CLOSED;
         this.searched.push(node);
     }
+
+    // TODO Implement an out of bounds checker function
 }
 
 

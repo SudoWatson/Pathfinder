@@ -6,6 +6,10 @@ import Node from "../nodeBase.js";
 const ENABLE_DIAGONAL = false;
 
 class BreadthFirst extends AlgoBase {
+    public static algoName = "Breadth First";  // TODO Check description, currently made by Copilot
+    public static description = "Breadth First Search is a path finding algorithm that searches the entire grid in a breadth first manner. It is not the most efficient algorithm, but it is guaranteed to find the shortest path if one exists.";
+    
+
     constructor(p: p5, grid: string[][], startPos: p5.Vector, endPos: p5.Vector) {
         super(p, grid, startPos, endPos);
     }

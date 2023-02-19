@@ -10,15 +10,6 @@ const DIAGONAL_COST = 14;
 
 const ENABLE_DIAGONAL = false;
 
-// type Node = {
-//     /** Node position on grid */
-//     pos: p5.Vector,
-//     /** Distance from starting node */
-//     gCost: number,
-//     /** Distance from end node */
-//     hCost: number
-// }
-
 class Node extends NodeBase {
     /** Distance from starting node */
     public gCost: number;
@@ -62,6 +53,7 @@ class Node extends NodeBase {
         return distance;
     }
     */
+
     /* This is for straight movement */
     private distanceBetween(pos1: p5.Vector, pos2: p5.Vector): number {
         let distance = 0;
@@ -71,15 +63,19 @@ class Node extends NodeBase {
         distance = dx * STRAIGHT_COST + dy * STRAIGHT_COST;
         return distance;
     }
+    /**/
 }
 
 
 
 class AStarSolver extends AlgoBase {
-
+    public static algoName = "A*";
+    public static description = "A* is a path finding algorithm that uses a heuristic to find the shortest path.";  // TODO Properly describe A*
 
     constructor(p: p5, grid: string[][], startPos: p5.Vector, endPos: p5.Vector) {
         super(p, grid, startPos, endPos);
+
+        
         this.endNode = new Node(endPos, 0);
         this.startNode = new Node(startPos, 0);
         (this.startNode as Node).updateHCost(this.endNode as Node);

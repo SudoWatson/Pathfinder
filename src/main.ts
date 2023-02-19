@@ -1,10 +1,25 @@
-import AlgoBase from "./algorithims/algoBase.js";
-import AStarSolver from "./algorithims/astar/astar.js";
-import BreadthFirst from "./algorithims/breadthFirst/algo.js";
+import AlgoBase from "./algorithims/algoBase.js";4
 
 import {FillType, AlgStatus} from "./tools.js";
 
+// Algorithm Imports \\
+import AStarSolver from "./algorithims/astar/astar.js";
+import BreadthFirst from "./algorithims/breadthFirst/breadthFirst.js";
 
+// A type of all of the algorithm classes
+type AlgoChildren =   typeof AStarSolver 
+                    | typeof BreadthFirst;
+
+// List of all of the algorithms
+const algos: (AlgoChildren)[] = [
+    AStarSolver,
+    BreadthFirst
+];
+
+// The selected algorithm to use
+let selectedAlgo: AlgoChildren;
+
+// Size of a grid square in pixels
 let squareSize = 50;
 
 // Amount of columns/rows on the grid
@@ -25,21 +40,22 @@ let grid: FillType[][];
 
 let pathFinder: AlgoBase;
 
-/** Boolean of whether the path finding algorithm is running or not */
-let running = false;
+/** Boolean of whether the path finding algorithm is currently running or not */
+let currentlyRunning = false;
 
 /** The interval looper thing for stepping through the path finding algorithm, called from 'setInterval' */
-let algInterval: number;
+let algInterval: ReturnType<typeof setInterval>;
 
 /** Delay of ms between algorithm steps */
 let algIntervalDelay: number = 50;
 
 /** The interval looper thing for stepping through the found path */
-let pathInterval: number;
+let pathInterval: ReturnType<typeof setInterval>;  // ReturnType<typeof setInterval> seems fancy  //number;
 
 /** Delay of ms between path display steps */
 let pathIntervalDelay: number = 10;
 
+/** If the path displaying is currently in progress of moving along the path, or else is static */
 const VIEW_PATH_IN_PROGRESS = false;
 
 /** Show algorithm debug values or not */
@@ -72,13 +88,34 @@ const sketch = (p: p5) => {
         // Disable right-click context menu on grid
         canvas.elt.addEventListener("contextmenu", (e: any) => e.preventDefault())
 
-
+        // Create reset button
         let resetButton = p.createButton("Reset");
         resetButton.mouseClicked(reset);
 
+        // Create start/stop button
         let toggleButton = p.createButton("Start/Stop");
         toggleButton.mouseClicked(togglePathFinding);
 
+        // Create algorithm selection dropdown
+        let algoSelect = p.createSelect();
+        // Adds all of the algorithms to the dropdown
+        for (const algoi in algos) {
+            if (Object.prototype.hasOwnProperty.call(algos, algoi)) {
+                const algo = algos[algoi];
+                // @ts-ignore // Option does not exist on p5.Element for some reason
+                algoSelect.option(algo.algoName, algoi);
+            }
+        }
+        // Runs whenever the user changes their selected algorithm
+        // @ts-ignore
+        algoSelect.changed(() => {
+            // Sets the selected algorithm to the one selected by the user, resets the grid, and stops the path finding
+            selectedAlgo = algos[algoSelect.value() as number];
+            reset();
+            togglePathFinding(false);
+        });
+        selectedAlgo = algos[algoSelect.value() as number];
+        
         // ---------------- END P5 SETUP ---------------- \\
 
 
@@ -109,8 +146,8 @@ const sketch = (p: p5) => {
                 else if (type === FillType.START) p.fill(230,0,0);
                 else if (type === FillType.END) p.fill(0,160,0);
                 // If position is in the list of current best path, set fill to orange
-                if (running && VIEW_PATH_IN_PROGRESS && currentPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
-                if (!running && displayPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
+                if (currentlyRunning && VIEW_PATH_IN_PROGRESS && currentPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
+                if (!currentlyRunning && displayPath.some((pos) => pos.equals(p.createVector(i,j)))) p.fill(255,140,0);
                 // If position is the start or end position, set fill to red or green
                 if (startPos.equals(p.createVector(i,j))) p.fill(230,0,0);
                 if (endPos.equals(p.createVector(i,j))) p.fill(0,160,0);
@@ -142,22 +179,30 @@ const sketch = (p: p5) => {
             }
         }
 
-
-        pathFinder = new BreadthFirst(p, grid, startPos, endPos);
+        // Create new path finder from the selected algorithm
+        pathFinder = new selectedAlgo(p, grid, startPos, endPos)// BreadthFirst(p, grid, startPos, endPos);
+        togglePathFinding(false);
     }
 
     /** Toggles running of algorithm */
-    function togglePathFinding() {
-        // Already running, stop running
-        if (running) {
+    function togglePathFinding(setToRun?: boolean) {
+        /*
+            If we are currently not running and (we want to set to run, or want to toggle), setup run
+            If we are currently running and (we want to set to stop run, or want to toggle), stop run
+        */
+        
+        // This function inside the button callback is called with an [object PointerEvent] as the first argument. 
+        // Instead of checking if run is undefined, we check if it is not a boolean
+        if (currentlyRunning && (typeof setToRun !== typeof true || setToRun === false)) {  // Already running, stop running
             clearInterval(algInterval);
-        } else {  // Not running, start running
+            currentlyRunning = false;
+        } else if (!currentlyRunning && (typeof setToRun !== typeof true|| setToRun === true)) {  // Not running, start running
             stepPathFinder();
             algInterval = setInterval(() => {
                 stepPathFinder();
             }, algIntervalDelay);
+            currentlyRunning = true;
         }
-        running = !running;
     }
 
     // Places a barrier
