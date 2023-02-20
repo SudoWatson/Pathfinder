@@ -225,15 +225,11 @@ const sketch = (p: p5) => {
         let mousePosition = p.createVector(Math.floor(p.mouseX/squareSize),Math.floor(p.mouseY/squareSize));
         if (p.mouseButton === p.LEFT) {
             if (movingStart) {
-                setPos(startPos, FillType.EMPTY);
                 startPos = mousePosition;
-                setPos(startPos, FillType.START);
                 pathFinder = new BreadthFirst(p, grid, startPos, endPos);
                 return;
             } else if (movingEnd) {
-                setPos(endPos, FillType.EMPTY);
                 endPos = mousePosition;
-                setPos(endPos, FillType.END);
                 pathFinder = new BreadthFirst(p, grid, startPos, endPos);
                 return;
             }
