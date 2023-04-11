@@ -10,6 +10,7 @@ const DIAGONAL_COST = 14;
 
 const ENABLE_DIAGONAL = false;
 
+// TODO put this in own file
 class Node extends NodeBase {
     /** Distance from starting node */
     public gCost: number;
@@ -82,31 +83,35 @@ class AStarSolver extends AlgoBase {
         this.toSearch.push(this.startNode);
     }
 
-    /**
-     * Executes a single step of the path finding algorithm
-     * @returns - The current best path, and whether the algorithm has finished
-     */
-    stepGrid(): [p5.Vector[], AlgStatus] {
+    getCurrentNode(): Node {
         /** The node with the lowest fCost currently */
         let currentNode: Node = this.toSearch[0] as Node;
-        if (this.toSearch.length === 0) {
-            // No nodes left to search, impossible to solve
-            console.log("Cannot find a path");
-            return [this.buildPath(currentNode), AlgStatus.NO_SOLUTION];
-        }
         // Get closest open node to end
         this.toSearch.forEach((newNode: NodeBase|Node) => {
             // If currentNode already has lower fCost, don't bother
             if (currentNode.fCost < (newNode as Node).fCost) return;  // Exit forEach
-            // If fCosts are equal, go by hCost
+            // fCosts are equal, go by hCost
             if (currentNode.hCost < (newNode as Node).hCost) return;
             // Otherwise, this new node is better
             currentNode = newNode as Node;
         })
+        return currentNode;
+    }
+
+    stepGrid(): [p5.Vector[], AlgStatus] {
+        if (this.toSearch.length === 0) {
+            // No nodes left to search, impossible to solve
+            console.log("Cannot find a path");
+            return [[], AlgStatus.NO_SOLUTION];
+        }
+
+        /** The node with the lowest fCost currently */
+        let currentNode: Node = this.getCurrentNode();
 
         // Remove currentNode from toSearch list
         let indexOfCurrentNode = this.toSearch.indexOf(currentNode);
         if (indexOfCurrentNode === -1) {
+            // This should never happen
             console.error("Could not find currentNode in open list");
             return [this.buildPath(currentNode), AlgStatus.ERROR];
         }
@@ -117,7 +122,7 @@ class AStarSolver extends AlgoBase {
             console.log("Found shortest path");
             return [this.buildPath(currentNode), AlgStatus.FOUND_SOLUTION];
         }
-
+        
         let cnx = currentNode.pos.x;
         let cny = currentNode.pos.y;
         for (let neighborX = cnx-1; neighborX <= cnx+1; neighborX++) {

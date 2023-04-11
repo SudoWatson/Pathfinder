@@ -14,13 +14,17 @@ class BreadthFirst extends AlgoBase {
         super(p, grid, startPos, endPos);
     }
 
+    getCurrentNode(): Node {
+        return this.toSearch[0] as Node;
+    }
+
     stepGrid(): [p5.Vector[], AlgStatus] {
 
-        let currentNode: Node = this.toSearch[0] as Node;
+        let currentNode: Node = this.getCurrentNode();
         if (this.toSearch.length === 0) {
             // No nodes left to search, impossible to solve
             console.log("Cannot find a path");
-            return [this.buildPath(currentNode), AlgStatus.NO_SOLUTION];
+            return [[], AlgStatus.NO_SOLUTION];
         }
 
         // Remove currentNode from toSearch list

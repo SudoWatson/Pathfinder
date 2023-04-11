@@ -28,13 +28,16 @@ abstract class AlgoBase {
         this.toSearch.push(this.startNode);
     }
 
+    /** Returns the current node being searched */
+    abstract getCurrentNode(): NodeBase;
+
     /**
      * Executes a single step of the path finding algorithm
      * @returns - The current best path, and whether the algorithm has finished
      */
     abstract stepGrid(): [p5.Vector[], AlgStatus];
 
-    /** Creates a list of positions of the path of the passed node */
+    /** Creates a list of positions of the path of the given node */
     buildPath(node: NodeBase): p5.Vector[] {
         let path: p5.Vector[] = [];
         let currentNode: NodeBase | null = node;
