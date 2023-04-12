@@ -26,12 +26,12 @@ class Node extends NodeBase {
     }
 
     /** GCost + HCost: Total expected distance along path this node is part of */
-    get fCost() {
+    public get fCost() {
         return this.gCost + this.hCost;
     }
 
     /** Update the hCost according the the given end node */
-    updateHCost(endNode: Node) {
+    public updateHCost(endNode: Node) {
         this.hCost = this.distanceBetween(this.pos, endNode.pos);
     }
     
@@ -83,7 +83,7 @@ class AStarSolver extends AlgoBase {
         this.toSearch.push(this.startNode);
     }
 
-    getCurrentNode(): Node {
+    protected override getCurrentNode(): Node {
         /** The node with the lowest fCost currently */
         let currentNode: Node = this.toSearch[0] as Node;
         // Get closest open node to end
@@ -98,31 +98,11 @@ class AStarSolver extends AlgoBase {
         return currentNode;
     }
 
-    stepGrid(): [p5.Vector[], AlgStatus] {
-        if (this.toSearch.length === 0) {
-            // No nodes left to search, impossible to solve
-            console.log("Cannot find a path");
-            return [[], AlgStatus.NO_SOLUTION];
-        }
-
+    protected override stepGrid(): [p5.Vector[], AlgStatus] {
         /** The node with the lowest fCost currently */
-        let currentNode: Node = this.getCurrentNode();
+        let currentNode: Node = this.currentNode as Node;
 
-        // Remove currentNode from toSearch list
-        let indexOfCurrentNode = this.toSearch.indexOf(currentNode);
-        if (indexOfCurrentNode === -1) {
-            // This should never happen
-            console.error("Could not find currentNode in open list");
-            return [this.buildPath(currentNode), AlgStatus.ERROR];
-        }
-        this.toSearch.splice(indexOfCurrentNode, 1);
-        this.addToSearched(currentNode);
-        if (currentNode.pos.equals(this.endNode.pos)) {
-            // Finished
-            console.log("Found shortest path");
-            return [this.buildPath(currentNode), AlgStatus.FOUND_SOLUTION];
-        }
-        
+        // TODO Check feasibility of this being pushed to a function
         let cnx = currentNode.pos.x;
         let cny = currentNode.pos.y;
         for (let neighborX = cnx-1; neighborX <= cnx+1; neighborX++) {
@@ -141,7 +121,10 @@ class AStarSolver extends AlgoBase {
                 if (neighborY >= this.grid[0].length) continue;
 
                 let neighborPos = this.p.createVector(neighborX, neighborY);
-
+                // TODO Up until here, this is the same as in BFS, put it in a function possibly
+                // Just modify this current method signature a bit to take in the current node, neighborpos, and any other variable defined before here but used after
+                // Then anything after this comment is what is put inside this method
+                // While what is above is in the abstract method before calling this method
 
                 // Check if neighbor is in closed list
                 let inClosed = false;
@@ -199,9 +182,8 @@ class AStarSolver extends AlgoBase {
      * @param squareSize - The size of the squares in the grid
      * 
      * Displays the fCost - center, gCost - top left, and hCost - top right of each node
-     * 
     */
-    renderNodeValues(squareSize: number) {
+    public override renderNodeValues(squareSize: number) {
         for (const node of [...this.toSearch, ...this.searched]) {
             let p = this.p;
             p.push();
@@ -216,7 +198,6 @@ class AStarSolver extends AlgoBase {
             p.pop();
         }
     }
-
 }
 
 export default AStarSolver;

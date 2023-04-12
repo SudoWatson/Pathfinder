@@ -14,33 +14,12 @@ class BreadthFirst extends AlgoBase {
         super(p, grid, startPos, endPos);
     }
 
-    getCurrentNode(): Node {
+    protected override getCurrentNode(): Node {
         return this.toSearch[0] as Node;
     }
 
-    stepGrid(): [p5.Vector[], AlgStatus] {
-
-        let currentNode: Node = this.getCurrentNode();
-        if (this.toSearch.length === 0) {
-            // No nodes left to search, impossible to solve
-            console.log("Cannot find a path");
-            return [[], AlgStatus.NO_SOLUTION];
-        }
-
-        // Remove currentNode from toSearch list
-        let indexOfCurrentNode = this.toSearch.indexOf(currentNode);
-        if (indexOfCurrentNode === -1) {
-            // This should never happen
-            console.error("Could not find currentNode in open list");
-            return [this.buildPath(currentNode), AlgStatus.ERROR];
-        }
-        this.toSearch.splice(indexOfCurrentNode, 1);
-        this.addToSearched(currentNode);
-        if (currentNode.pos.equals(this.endNode.pos)) {
-            // Finished
-            console.log("Found shortest path");
-            return [this.buildPath(currentNode), AlgStatus.FOUND_SOLUTION];
-        }
+    protected override stepGrid(): [p5.Vector[], AlgStatus] {
+        let currentNode = this.currentNode as Node;
 
         let cnx = currentNode.pos.x;
         let cny = currentNode.pos.y;
@@ -84,7 +63,6 @@ class BreadthFirst extends AlgoBase {
                 // Otherwise, add to open list
                 let newNode = new Node(neighborPos, currentNode);
                 this.addToToSearched(newNode);
-
             }
         }
        return [this.buildPath(currentNode), AlgStatus.RUNNING];

@@ -271,7 +271,7 @@ const sketch = (p: p5) => {
      * If the algorithm is finished, stops the algorithm
      */
     function stepPathFinder() {
-        let stepResult = pathFinder.stepGrid();
+        let stepResult = pathFinder.StepGrid();
         currentPath = stepResult[0];
         if (stepResult[1] !== AlgStatus.RUNNING) {
             togglePathFinding();  // Stop running
